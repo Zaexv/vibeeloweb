@@ -1,0 +1,32 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Rounded square background -->
+  <rect x="2" y="2" width="116" height="116" rx="24" ry="24" fill="#FFFFFF" stroke="#0F0F10" stroke-width="2"/>
+  
+  <!-- Background divided by the "6" shape -->
+  <!-- Teal section (top-left) -->
+  <path d="M 2 2 L 2 52 L 52 52 L 52 2 Z" fill="#7ED1C2" stroke="#0F0F10" stroke-width="2"/>
+  
+  <!-- Coral section (bottom-right) -->
+  <path d="M 52 52 L 118 52 L 118 118 L 2 118 L 2 52 Z" fill="#F06F5C" stroke="#0F0F10" stroke-width="2"/>
+  
+  <!-- White "6" shape - horizontal top part -->
+  <rect x="18" y="45" width="84" height="14" rx="7" fill="#FFFFFF" stroke="#0F0F10" stroke-width="2"/>
+  
+  <!-- White "6" shape - vertical stroke and loop -->
+  <path d="M 100 52 
+           L 100 75
+           Q 100 85, 90 90
+           Q 80 95, 65 95
+           Q 50 95, 40 88
+           Q 30 81, 30 68
+           Q 30 55, 40 55
+           Q 50 55, 55 62
+           Q 60 69, 60 78
+           Q 60 87, 65 95" 
+        fill="#FFFFFF" 
+        stroke="#0F0F10" 
+        stroke-width="2"/>
+  
+  <!-- Yellow accent inside the loop of the "6" -->
+  <ellipse cx="47" cy="76" rx="9" ry="11" fill="#F5C84C" stroke="#0F0F10" stroke-width="2"/>
+</svg>

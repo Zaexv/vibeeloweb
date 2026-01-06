@@ -1,33 +1,76 @@
 // Parallax Effect
 document.addEventListener('DOMContentLoaded', function() {
-    // Parallax scroll effect
-    const parallaxElements = document.querySelectorAll('.parallax-bg, .parallax-image, .parallax-item');
-    
-    function updateParallax() {
-        const scrolled = window.pageYOffset;
-        
-        parallaxElements.forEach(element => {
-            const speed = parseFloat(element.getAttribute('data-speed')) || 0.5;
-            const yPos = -(scrolled * speed);
-            element.style.transform = `translate3d(0, ${yPos}px, 0)`;
-        });
-    }
-
     // Throttle function for performance
     function throttle(func, wait) {
         let timeout;
+        let lastCall = 0;
         return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
+            const now = Date.now();
+            const timeSinceLastCall = now - lastCall;
+            
+            if (timeSinceLastCall >= wait) {
+                lastCall = now;
                 func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
+            } else {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    lastCall = Date.now();
+                    func(...args);
+                }, wait - timeSinceLastCall);
+            }
         };
     }
 
-    // Apply parallax on scroll
-    window.addEventListener('scroll', throttle(updateParallax, 10));
+    // Parallax scroll effect for background elements
+    function updateParallax() {
+        const scrolled = window.pageYOffset;
+        const windowHeight = window.innerHeight;
+        
+        // Handle parallax backgrounds (hero, about image)
+        const parallaxBgs = document.querySelectorAll('.parallax-bg');
+        parallaxBgs.forEach(element => {
+            const rect = element.getBoundingClientRect();
+            const elementTop = rect.top + scrolled;
+            const elementBottom = elementTop + rect.height;
+            
+            // Only apply parallax if element is in or near viewport
+            if (elementBottom >= scrolled - windowHeight && elementTop <= scrolled + windowHeight * 2) {
+                const speed = parseFloat(element.getAttribute('data-speed')) || 0.5;
+                const yPos = -(scrolled * speed);
+                element.style.transform = `translate3d(0, ${yPos}px, 0)`;
+                element.style.willChange = 'transform';
+            }
+        });
+
+        // Handle parallax image section
+        const parallaxImage = document.querySelector('.parallax-image');
+        if (parallaxImage) {
+            const rect = parallaxImage.getBoundingClientRect();
+            const elementTop = rect.top + scrolled;
+            const elementBottom = elementTop + rect.height;
+            
+            if (elementBottom >= scrolled - windowHeight && elementTop <= scrolled + windowHeight * 2) {
+                const speed = parseFloat(parallaxImage.getAttribute('data-speed')) || 0.6;
+                const yPos = -(scrolled * speed);
+                parallaxImage.style.transform = `translate3d(0, ${yPos}px, 0)`;
+                parallaxImage.style.willChange = 'transform';
+            }
+        }
+    }
+
+    // Apply parallax on scroll with requestAnimationFrame for smoothness
+    let ticking = false;
+    function onScroll() {
+        if (!ticking) {
+            window.requestAnimationFrame(() => {
+                updateParallax();
+                ticking = false;
+            });
+            ticking = true;
+        }
+    }
+    
+    window.addEventListener('scroll', onScroll, { passive: true });
 
     // Header scroll effect
     const header = document.getElementById('header');
@@ -92,18 +135,37 @@ document.addEventListener('DOMContentLoaded', function() {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 entry.target.style.opacity = '1';
-                entry.target.style.transform = 'translateY(0)';
+                // Only apply translateY to non-parallax elements
+                if (!entry.target.classList.contains('parallax-item')) {
+                    entry.target.style.transform = 'translateY(0)';
+                }
             }
         });
     }, observerOptions);
 
-    // Observe elements for animation
-    const animateElements = document.querySelectorAll('.feature-card, .gallery-item, .stat-item');
+    // Observe elements for animation (excluding gallery items with parallax)
+    const animateElements = document.querySelectorAll('.feature-card, .stat-item');
     animateElements.forEach(el => {
         el.style.opacity = '0';
         el.style.transform = 'translateY(30px)';
         el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
         observer.observe(el);
+    });
+
+    // Separate observer for gallery items (only opacity, no transform)
+    const galleryObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+            }
+        });
+    }, observerOptions);
+
+    const galleryItems = document.querySelectorAll('.gallery-item');
+    galleryItems.forEach(el => {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 0.6s ease';
+        galleryObserver.observe(el);
     });
 
     // Form submission
@@ -121,10 +183,10 @@ document.addEventListener('DOMContentLoaded', function() {
             // Simple validation
             if (name && email && message) {
                 // Here you would typically send the data to a server
-                alert('Thank you for your message! We\'ll get back to you soon.');
+                alert('¡Gracias por tu mensaje! Te responderemos pronto.');
                 this.reset();
             } else {
-                alert('Please fill in all fields.');
+                alert('Por favor completa todos los campos.');
             }
         });
     }
@@ -151,25 +213,50 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Add parallax effect to gallery items on scroll
-    window.addEventListener('scroll', throttle(() => {
-        const galleryItems = document.querySelectorAll('.gallery-item');
+    // Parallax effect for gallery items (subtle movement)
+    function updateGalleryParallax() {
+        const galleryItems = document.querySelectorAll('.gallery-item.parallax-item');
         const scrolled = window.pageYOffset;
+        const windowHeight = window.innerHeight;
         
-        galleryItems.forEach((item, index) => {
-            const speed = parseFloat(item.getAttribute('data-speed')) || 0.3;
+        galleryItems.forEach((item) => {
             const rect = item.getBoundingClientRect();
             const elementTop = rect.top + scrolled;
-            const elementCenter = elementTop + rect.height / 2;
-            const viewportCenter = scrolled + window.innerHeight / 2;
-            const distance = viewportCenter - elementCenter;
-            const yPos = distance * speed * 0.1;
+            const elementBottom = elementTop + rect.height;
             
-            item.querySelector('.gallery-image').style.transform = `translate3d(0, ${yPos}px, 0) scale(1.1)`;
+            // Only apply parallax if element is visible in viewport
+            if (elementBottom >= scrolled && elementTop <= scrolled + windowHeight) {
+                const speed = parseFloat(item.getAttribute('data-speed')) || 0.3;
+                const elementCenter = elementTop + rect.height / 2;
+                const viewportCenter = scrolled + windowHeight / 2;
+                const distance = viewportCenter - elementCenter;
+                const yPos = distance * speed * 0.15;
+                
+                const galleryImage = item.querySelector('.gallery-image');
+                if (galleryImage) {
+                    galleryImage.style.transform = `translate3d(0, ${yPos}px, 0)`;
+                    galleryImage.style.willChange = 'transform';
+                }
+            }
         });
-    }, 10));
+    }
+
+    // Combine gallery parallax with main parallax
+    let galleryTicking = false;
+    function onScrollGallery() {
+        if (!galleryTicking) {
+            window.requestAnimationFrame(() => {
+                updateGalleryParallax();
+                galleryTicking = false;
+            });
+            galleryTicking = true;
+        }
+    }
+    
+    window.addEventListener('scroll', onScrollGallery, { passive: true });
 
     // Initialize parallax on load
     updateParallax();
+    updateGalleryParallax();
 });
 
